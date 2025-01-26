@@ -1,7 +1,9 @@
 'use client'
-import { useState,useEffect, use } from 'react';
+import { useState,useEffect} from 'react';
 import styles from './page.module.scss';
-const months = [
+import { useRouter,usePathname } from 'next/navigation';
+
+const months: string[] = [
   "January",
   "February",
   "March",
@@ -17,9 +19,13 @@ const months = [
 ];
 export default function Home() {
   let today = new Date();
+  const pathname = usePathname();
+  const router = useRouter();
   const [month,changeMonth] = useState(0);
   const [day,changeDay] = useState(0);
   const [year,chageYear] = useState(0);
+  const [cumulativeDay,cumulativeDayChange] = useState(0);
+  
   useEffect(() => {
     changeMonth(today.getMonth());
     changeDay(today.getDate());
@@ -30,9 +36,29 @@ export default function Home() {
       changeDay(today.getDate());
       chageYear(today.getFullYear());
     }, 1000);
-
     return () => clearInterval(interval);
-  }, []);
+  }, []);//날짜 게산
+
+  useEffect(() => {
+    const storedDate = localStorage.getItem("lastDate");
+    const storedCount = localStorage.getItem("count");
+
+    if(storedCount){
+      cumulativeDayChange(parseInt(storedCount, 10));
+    }
+
+    const today = new Date().toDateString();
+
+    if(storedDate !== today){
+      cumulativeDayChange((iter) => {
+        const newCount = iter+ 1;
+        localStorage.setItem("count",newCount.toString());
+        localStorage.setItem("lastDate", today);
+        return newCount;
+      })
+    }
+  }, []); //누적 일수 계산
+
   
   return (
     <div className={styles.main}>
@@ -42,12 +68,12 @@ export default function Home() {
       <div className={styles.words}>
         <div>
           <h1>Hi Wordler</h1>
-          <p>Great job on today’s puzzle! Check out your progress.</p>
+          <p>Get 6 chances to guess a 5-letter word.</p>
         </div>
-        <div><span>See Stats</span></div>
+        <div><span onClick={() => router.push('/wordle')}>Play</span></div>
         <div>
           <span>{months[month]} {day}, {year}</span>
-          <span>No.</span>
+          <span>No.{cumulativeDay}</span>
           <span>made by choi wuseck </span>
         </div>
       </div>
